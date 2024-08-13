@@ -177,6 +177,9 @@ func (a *Application) SetupLoggerAndConfig() *log.ZapEventLogger {
 	}
 
 	log.SetupLogging(zapCore, func(name string) zapcore.Level {
+		if conf.DevMode() {
+			return zapcore.DebugLevel
+		}
 		if strings.HasPrefix(name, "awl") {
 			return lvl
 		}
