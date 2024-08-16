@@ -99,6 +99,14 @@ func (c *Client) UpdateMySettings(name string) error {
 	return c.sendPostRequest(api.UpdateMyInfoPath, request, nil)
 }
 
+func (c *Client) SetRendezvous(rendezvous string, alias, ipAddr string) error {
+	request := entity.SetRendezvousRequest{
+		RendezvousString: rendezvous,
+		Alias:            alias,
+		IpAddr:           ipAddr,
+	}
+	return c.sendPostRequest(api.SetRendezvousPath, request, nil)
+}
 func (c *Client) P2pDebugInfo() (*entity.P2pDebugInfo, error) {
 	debugInfo := new(entity.P2pDebugInfo)
 	err := c.sendGetRequest(api.GetP2pDebugInfoPath, debugInfo)

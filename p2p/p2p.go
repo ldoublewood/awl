@@ -329,7 +329,8 @@ func (p *P2p) MaintainBackgroundDiscovery(ctx context.Context, authStatus *servi
 			if aPeer.ID == p.host.ID() {
 				continue
 			}
-			_, ok := c.GetPeer(aPeer.ID.String())
+			aPeerId := aPeer.ID.String()
+			_, ok := c.GetPeer(aPeerId)
 			if !ok {
 				authStatus.AddPeer(ctx, aPeer.ID, "", aPeer.ID.String(), false)
 			}

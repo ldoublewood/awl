@@ -60,3 +60,14 @@ func renameMe(api *apiclient.Client, newName string) error {
 
 	return nil
 }
+func setRendezvous(api *apiclient.Client, rendezvous string, alias, ipAddr string) error {
+	err := api.SetRendezvous(rendezvous, alias, ipAddr)
+	if err != nil {
+		return err
+	}
+
+	fmt.Println("set rendezvous successfully")
+
+	return nil
+
+}

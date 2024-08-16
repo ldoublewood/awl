@@ -117,6 +117,31 @@ func (a *Application) init() {
 							return renameMe(a.api, c.String("name"))
 						},
 					},
+					{
+						Name:  "set-rendezvous",
+						Usage: "Set Rendezvous",
+						Flags: []cli.Flag{
+							&cli.StringFlag{
+								Name:     "rendezvous",
+								Usage:    "rendezvous string of this workgroup",
+								Required: true,
+							},
+							&cli.StringFlag{
+								Name:     "alias",
+								Usage:    "my unique nickname",
+								Required: true,
+							},
+							&cli.StringFlag{
+								Name:     "ipaddr",
+								Usage:    "my ip address, e.g. 10.0.0.1/24 ",
+								Required: true,
+							},
+						},
+						Before: a.initApiConnection,
+						Action: func(c *cli.Context) error {
+							return setRendezvous(a.api, c.String("rendezvous"), c.String("alias"), c.String("ipaddr"))
+						},
+					},
 				},
 			},
 			{
