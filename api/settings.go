@@ -66,6 +66,38 @@ func (h *Handler) UpdateMySettings(c echo.Context) (err error) {
 }
 
 // @Tags Settings
+// @Summary Set Rendezvous info
+// @Accept json
+// @Produce json
+// @Param body body entity.SetRendezvousRequest true "Params"
+// @Success 200 "OK"
+// @Router /settings/set_rendezvous [POST]
+func (h *Handler) SetRendezvous(c echo.Context) (err error) {
+	req := entity.SetRendezvousRequest{}
+	err = c.Bind(&req)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, ErrorMessage(err.Error()))
+	}
+	if err = c.Validate(req); err != nil {
+		return c.JSON(http.StatusBadRequest, ErrorMessage(err.Error()))
+	}
+
+	h.conf.Lock()
+	h.conf.Rendezvous = req.RendezvousString
+	h.conf.VPNConfig.IPNet = req.IpAddr
+	h.conf.P2pNode.Name = req.Alias
+
+	h.conf.Unlock()
+	h.conf.Save()
+
+	go func() {
+		h.authStatus.ExchangeStatusInfoWithAllKnownPeers(h.ctx)
+	}()
+
+	return c.NoContent(http.StatusOK)
+}
+
+// @Tags Settings
 // @Summary Export server configuration
 // @Accept json
 // @Produce json

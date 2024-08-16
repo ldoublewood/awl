@@ -109,6 +109,7 @@ func (h *Handler) setupRouter(address string) (*echo.Echo, error) {
 	e.GET(GetMyPeerInfoPath, h.GetMyPeerInfo)
 	e.POST(UpdateMyInfoPath, h.UpdateMySettings)
 	e.GET(ExportServerConfigPath, h.ExportServerConfiguration)
+	e.POST(SetRendezvousPath, h.SetRendezvous)
 
 	// Debug
 	e.GET(GetP2pDebugInfoPath, h.GetP2pDebugInfo)

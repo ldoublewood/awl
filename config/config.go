@@ -52,6 +52,8 @@ type (
 		KnownPeers            map[string]KnownPeer   `json:"knownPeers"`
 		BlockedPeers          map[string]BlockedPeer `json:"blockedPeers"`
 		Update                UpdateConfig           `json:"update"`
+
+		Rendezvous string `json:"rendezvous"`
 	}
 	P2pNodeConfig struct {
 		// Hex-encoded multihash representing a peer ID, calculated from Identity

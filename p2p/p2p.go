@@ -5,6 +5,8 @@ import (
 	"crypto/rand"
 	"errors"
 	"fmt"
+	"github.com/anywherelan/awl/config"
+	"github.com/anywherelan/awl/service"
 	"io"
 	"net"
 	"sync"
@@ -23,6 +25,8 @@ import (
 	"github.com/libp2p/go-libp2p/core/peerstore"
 	"github.com/libp2p/go-libp2p/core/protocol"
 	"github.com/libp2p/go-libp2p/core/routing"
+	drouting "github.com/libp2p/go-libp2p/p2p/discovery/routing"
+	dutil "github.com/libp2p/go-libp2p/p2p/discovery/util"
 	basichost "github.com/libp2p/go-libp2p/p2p/host/basic"
 	"github.com/libp2p/go-libp2p/p2p/net/connmgr"
 	"github.com/libp2p/go-libp2p/p2p/net/swarm"
@@ -288,6 +292,49 @@ func (p *P2p) Bootstrap() error {
 	}
 
 	return nil
+}
+
+func (p *P2p) MaintainBackgroundDiscovery(ctx context.Context, authStatus *service.AuthStatus, c *config.Config) {
+	interval := 15 * time.Second
+	// Wait a bit to let bootstrapping finish (really bootstrap should block until it's ready, but that isn't the case yet.)
+	time.Sleep(3 * time.Second)
+	const firstTryInterval = 5 * time.Second
+	// We use a rendezvous point "meet me here" to announce our location.
+	// This is like telling your friends to meet you at the Eiffel Tower.
+
+	routingDiscovery := drouting.NewRoutingDiscovery(p.dht)
+	dutil.Advertise(ctx, routingDiscovery, c.Rendezvous)
+	select {
+	case <-ctx.Done():
+		return
+	case <-time.After(firstTryInterval):
+	}
+
+	t := time.NewTicker(interval)
+	defer t.Stop()
+
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-t.C:
+		}
+		// Now, look for others who have announced
+		// This is like your friend telling you the location to meet you.
+		peerChan, err := routingDiscovery.FindPeers(ctx, c.Rendezvous)
+		if err != nil {
+			panic(err)
+		}
+		for aPeer := range peerChan {
+			if aPeer.ID == p.host.ID() {
+				continue
+			}
+			_, ok := c.GetPeer(aPeer.ID.String())
+			if !ok {
+				authStatus.AddPeer(ctx, aPeer.ID, "", aPeer.ID.String(), false)
+			}
+		}
+	}
 }
 
 func (p *P2p) MaintainBackgroundConnections(ctx context.Context, interval time.Duration, knownPeersIdsFunc func() []peer.ID) {

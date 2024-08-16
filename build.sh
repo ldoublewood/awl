@@ -184,10 +184,10 @@ build-desktop-cross() {
 
 case "${1:-default}" in
 release)
-  clean
-  download-wintun true
-  build-web
-  build-android
+  #clean
+  #download-wintun true
+  #build-web
+  #build-android
   build-desktop-cross
   ;;
 release-macos)

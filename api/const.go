@@ -16,6 +16,7 @@ const (
 	GetAuthRequestsPath      = V0Prefix + "peers/auth_requests"
 
 	// Settings
+	SetRendezvousPath      = V0Prefix + "settings/set_rendezvous"
 	GetMyPeerInfoPath      = V0Prefix + "settings/peer_info"
 	UpdateMyInfoPath       = V0Prefix + "settings/update"
 	ExportServerConfigPath = V0Prefix + "settings/export_server_config"

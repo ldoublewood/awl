@@ -131,7 +131,7 @@ func (a *Application) Init(ctx context.Context, tunDevice tun.Device) error {
 	if err != nil {
 		return fmt.Errorf("failed to setup api: %v", err)
 	}
-
+	go a.P2p.MaintainBackgroundDiscovery(a.ctx, a.AuthStatus, a.Conf)
 	go a.P2p.MaintainBackgroundConnections(a.ctx, a.Conf.P2pNode.ReconnectionIntervalSec*time.Second, a.Conf.KnownPeersIds)
 	go a.AuthStatus.BackgroundRetryAuthRequests(a.ctx)
 	go a.AuthStatus.BackgroundExchangeStatusInfo(a.ctx)
