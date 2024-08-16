@@ -23,7 +23,9 @@ const (
 	AppDataDirectory          = "anywherelan"
 	DhtPeerstoreDataDirectory = "peerstore"
 	AppDataDirEnvKey          = "AWL_DATA_DIR"
-
+	RendezvousKey             = "RENDEZVOUS"
+	IPAddrKey                 = "IPADDR"
+	AliasKey                  = "ALIAS"
 	// TODO 8989 maybe?
 	DefaultHTTPPort              = 8639
 	AdminHttpServerDomainName    = "admin"

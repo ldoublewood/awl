@@ -1,6 +1,8 @@
 package config
 
 import (
+	"crypto/md5"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"net/url"
@@ -47,7 +49,16 @@ func init() {
 		DefaultBootstrapPeers = append(DefaultBootstrapPeers, ma)
 	}
 }
-
+func CalcAppDataDirSandbox() string {
+	dataDir := CalcAppDataDir()
+	dataDir = dataDir + "/" + GetSandboxFromEnv()
+	err := os.MkdirAll(dataDir, dirsPerm)
+	if err != nil {
+		logger.Errorf("could not create data directory : %v", err)
+	}
+	ChownFileIfNeeded(dataDir)
+	return dataDir
+}
 func CalcAppDataDir() string {
 	if envDir := os.Getenv(AppDataDirEnvKey); envDir != "" {
 		err := os.MkdirAll(envDir, dirsPerm)
@@ -90,12 +101,26 @@ func CalcAppDataDir() string {
 
 func NewConfig(bus awlevent.Bus) *Config {
 	conf := &Config{}
-	setDefaults(conf, bus)
+	setDefaultsAndEnv(conf, bus)
 	return conf
 }
 
+func GetSandboxFromEnv() string {
+	envRend := os.Getenv(RendezvousKey)
+	return getSandbox(envRend)
+}
+
+func getSandbox(rendezvous string) string {
+	if rendezvous == "" {
+		return "0"
+	} else {
+		md5sum := md5.Sum([]byte(rendezvous))
+		return hex.EncodeToString(md5sum[:])
+	}
+}
+
 func LoadConfig(bus awlevent.Bus) (*Config, error) {
-	dataDir := CalcAppDataDir()
+	dataDir := CalcAppDataDirSandbox()
 	configPath := filepath.Join(dataDir, AppConfigFilename)
 	data, err := os.ReadFile(configPath)
 	if err != nil {
@@ -108,7 +133,7 @@ func LoadConfig(bus awlevent.Bus) (*Config, error) {
 		return nil, err
 	}
 	conf.dataDir = dataDir
-	setDefaults(conf, bus)
+	setDefaultsAndEnv(conf, bus)
 	return conf, nil
 }
 
@@ -128,7 +153,26 @@ func ImportConfig(data []byte, directory string) error {
 	logger.Infof("Imported new config to '%s'", path)
 	return nil
 }
+func setByEnv(conf *Config) {
+	ipaddr := os.Getenv(IPAddrKey)
+	if len(ipaddr) != 0 {
+		conf.VPNConfig.IPNet = ipaddr
+	}
 
+	alias := os.Getenv(AliasKey)
+	if len(alias) != 0 {
+		conf.P2pNode.Name = alias
+	}
+	rendezvous := os.Getenv(RendezvousKey)
+	if len(rendezvous) != 0 {
+		conf.Rendezvous = rendezvous
+	}
+
+}
+func setDefaultsAndEnv(conf *Config, bus awlevent.Bus) {
+	setDefaults(conf, bus)
+	setByEnv(conf)
+}
 func setDefaults(conf *Config, bus awlevent.Bus) {
 	isEmptyConfig := conf.Version == ""
 
@@ -198,7 +242,7 @@ func setDefaults(conf *Config, bus awlevent.Bus) {
 	}
 
 	if conf.dataDir == "" {
-		conf.dataDir = CalcAppDataDir()
+		conf.dataDir = CalcAppDataDirSandbox()
 	}
 
 	// Create dirs
