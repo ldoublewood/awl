@@ -201,6 +201,16 @@ func (s *AuthStatus) AuthStreamHandler(stream network.Stream) {
 		return
 	}
 
+	key := config.GetHmacKey()
+	// peerID is remote peer ID, but from signing (remote) side's point of view,  peerID is my ID, similar for my peer ID
+	verified, message, errCheck := protocol.CheckAuthInfo(authPeer.AuthInfo, peerID, s.conf.P2pNode.PeerID, nil, key)
+	if errCheck != nil {
+		s.logger.Errorf("check auth info, peerID: %s, message: %s, err: %v", peerID, message, err)
+	}
+	if !verified {
+		s.logger.Errorf("signature auth info not verified, peerID:%s, message: %s, err: %v", peerID, message, err)
+	}
+
 	_, isBlocked := s.conf.GetBlockedPeer(peerID)
 	_, confirmed := s.conf.GetPeer(peerID)
 	s.conf.RLock()
@@ -222,7 +232,13 @@ func (s *AuthStatus) AuthStreamHandler(stream network.Stream) {
 		}()
 	}
 
-	authResponse := protocol.AuthPeerResponse{Confirmed: confirmed, Declined: isBlocked}
+	authInfo, message, err := protocol.GenAuthInfo(s.conf.P2pNode.PeerID, peerID, &authPeer.Nonce, key)
+	if err != nil {
+		s.logger.Errorf("gen auth info for response %s: %v", peerID, err)
+	}
+	s.logger.Debugf("gen auth info, message: %s", message)
+
+	authResponse := protocol.AuthPeerResponse{AuthInfo: authInfo, Confirmed: confirmed, Declined: isBlocked || !verified}
 	err = protocol.SendAuthResponse(stream, authResponse)
 	if err != nil {
 		s.logger.Errorf("sending auth response to %s as an answer: %v", peerID, err)
@@ -258,6 +274,20 @@ func (s *AuthStatus) SendAuthRequest(ctx context.Context, peerID peer.ID, req pr
 	authResponse, err := protocol.ReceiveAuthResponse(stream)
 	if err != nil {
 		return fmt.Errorf("receiving auth response from %s: %v", peerID, err)
+	}
+
+	key := config.GetHmacKey()
+	// peerID is remote peer ID, but from signing (remote) side's point of view,  peerID is my ID, similar for my peer ID
+	// remote nonce (from remote side's point of view) here actually is the nonce of AuthRequest
+	verified, message, errCheck := protocol.CheckAuthInfo(authResponse.AuthInfo, peerID.String(), s.conf.P2pNode.PeerID, &req.Nonce, key)
+	s.logger.Debugf("gen auth info, message: %s", message)
+	if errCheck != nil {
+		s.logger.Errorf("check auth info %s: %v", peerID, err)
+		return errCheck
+	}
+	if !verified {
+		s.logger.Errorf("signature auth info not verified %s: %v", peerID, err)
+		return fmt.Errorf("signature auth info not verified %s: %v", peerID, err)
 	}
 
 	if authResponse.Confirmed || authResponse.Declined {
@@ -298,8 +328,16 @@ func (s *AuthStatus) AddPeer(ctx context.Context, peerID peer.ID, name, uniqAlia
 		ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
 		defer cancel()
 		if !confirmed {
+			key := config.GetHmacKey()
+			authInfo, message, err := protocol.GenAuthInfo(s.conf.P2pNode.PeerID, peerID.String(), nil, key)
+			if err != nil {
+				s.logger.Errorf("gen auth info %s: %v", peerID.String(), err)
+			}
+			s.logger.Debugf("gen auth info, message: %s", message)
+
 			authPeer := protocol.AuthPeer{
-				Name: s.conf.P2pNode.Name,
+				AuthInfo: authInfo,
+				Name:     s.conf.P2pNode.Name,
 			}
 			_ = s.SendAuthRequest(ctx, peerID, authPeer)
 		}
@@ -386,8 +424,17 @@ func (s *AuthStatus) restoreOutgoingAuths() {
 	outgoingAuths := make(map[peer.ID]protocol.AuthPeer)
 	for _, knownPeer := range s.conf.KnownPeers {
 		if !knownPeer.Confirmed && !knownPeer.Declined {
+			key := config.GetHmacKey()
+			authInfo, message, err := protocol.GenAuthInfo(s.conf.P2pNode.PeerID, knownPeer.PeerID, nil, key)
+			s.logger.Debugf("gen auth info, message: %s", message)
+			if err != nil {
+				s.logger.Errorf("gen auth info %s: %v", knownPeer.PeerID, err)
+				continue
+			}
+
 			outgoingAuths[knownPeer.PeerId()] = protocol.AuthPeer{
-				Name: peerName,
+				AuthInfo: authInfo,
+				Name:     peerName,
 			}
 		}
 	}

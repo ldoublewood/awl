@@ -194,6 +194,11 @@ func (a *Application) SetupLoggerAndConfig() *log.ZapEventLogger {
 	)
 
 	a.logger = log.Logger("awl")
+
+	if errSet := os.Setenv("DEVMODE", "true"); errSet != nil {
+		a.logger.Errorf("setting dev mode %v", errSet)
+	}
+
 	a.Conf = conf
 
 	if loadConfigErr != nil {

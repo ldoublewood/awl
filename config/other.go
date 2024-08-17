@@ -104,7 +104,13 @@ func NewConfig(bus awlevent.Bus) *Config {
 	setDefaultsAndEnv(conf, bus)
 	return conf
 }
-
+func GetHmacKey() *string {
+	envRend, has := os.LookupEnv(RendezvousKey)
+	if !has {
+		return nil
+	}
+	return &envRend
+}
 func GetSandboxFromEnv() string {
 	envRend := os.Getenv(RendezvousKey)
 	return getSandbox(envRend)
