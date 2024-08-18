@@ -388,7 +388,7 @@ func (s *AuthStatus) ExchangeStatusInfoWithAllKnownPeers(ctx context.Context) {
 		}
 		errExchange := s.ExchangeNewStatusInfo(ctx, knownPeer.PeerId(), knownPeer)
 		if errExchange != nil {
-			s.logger.Errorf("exchange new status info %s: %v", peerID.String(), errExchange)
+			s.logger.Errorf("exchange new status info %s: %v", knownPeer.PeerID, errExchange)
 		}
 	}
 }
