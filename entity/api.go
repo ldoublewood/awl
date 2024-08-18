@@ -39,7 +39,7 @@ type (
 	SetRendezvousRequest struct {
 		RendezvousString string `validate:"required"`
 		Alias            string `validate:"required,trimmed_str_not_empty"`
-		IpAddr           string
+		IPNet            string
 	}
 )
 

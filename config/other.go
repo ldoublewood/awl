@@ -234,9 +234,9 @@ func setDefaults(conf *Config, bus awlevent.Bus) {
 			logger.Warnf("incorrect config: peer (id: %s) alias %s is not unique, updated automaticaly to %s", peerID, peer.Alias, newAlias)
 			peer.Alias = newAlias
 		}
-		if peer.IPAddr == "" {
-			peer.IPAddr = conf.GenerateNextIpAddr()
-		}
+		//if peer.IPAddr == "" {
+		//	peer.IPAddr = conf.GenerateNextIpAddr()
+		//}
 		if peer.DomainName == "" {
 			peer.DomainName = awldns.TrimDomainName(peer.DisplayName())
 		}

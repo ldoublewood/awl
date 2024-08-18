@@ -26,6 +26,7 @@ const (
 type (
 	PeerStatusInfo struct {
 		Name                 string
+		IPAddr               string
 		Declined             bool
 		AllowUsingAsExitNode bool
 	}

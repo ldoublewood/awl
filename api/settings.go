@@ -84,7 +84,7 @@ func (h *Handler) SetRendezvous(c echo.Context) (err error) {
 
 	h.conf.Lock()
 	h.conf.Rendezvous = req.RendezvousString
-	h.conf.VPNConfig.IPNet = req.IpAddr
+	h.conf.VPNConfig.IPNet = req.IPNet
 	h.conf.P2pNode.Name = req.Alias
 
 	h.conf.Unlock()

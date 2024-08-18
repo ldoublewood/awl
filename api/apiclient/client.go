@@ -103,7 +103,7 @@ func (c *Client) SetRendezvous(rendezvous string, alias, ipAddr string) error {
 	request := entity.SetRendezvousRequest{
 		RendezvousString: rendezvous,
 		Alias:            alias,
-		IpAddr:           ipAddr,
+		IPNet:            ipAddr,
 	}
 	return c.sendPostRequest(api.SetRendezvousPath, request, nil)
 }

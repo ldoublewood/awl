@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"fmt"
+	"net"
 	"strings"
 	"sync"
 	"time"
@@ -84,8 +85,15 @@ func (s *AuthStatus) StatusStreamHandler(stream network.Stream) {
 	delete(s.outgoingAuths, remotePeer)
 	s.authsLock.Unlock()
 
+	ip := net.ParseIP(s.conf.VPNConfig.IPNet)
+	if ip == nil {
+		s.logger.Errorf("invalid ip address %s", s.conf.VPNConfig.IPNet)
+		return
+	}
+	ipStr := ip.To4().String()
+
 	// Sending info
-	myPeerInfo := s.createPeerInfo(knownPeer, s.conf.P2pNode.Name, isBlocked)
+	myPeerInfo := s.createPeerInfo(knownPeer, s.conf.P2pNode.Name, ipStr, isBlocked)
 	err = protocol.SendStatus(stream, myPeerInfo)
 	if err != nil {
 		s.logger.Errorf("sending status info to %s as an answer: %v", peerID, err)
@@ -123,7 +131,13 @@ func (s *AuthStatus) ExchangeNewStatusInfo(ctx context.Context, remotePeerID pee
 	}()
 
 	_, isBlocked := s.conf.GetBlockedPeer(remotePeerID.String())
-	myPeerInfo := s.createPeerInfo(knownPeer, s.conf.P2pNode.Name, isBlocked)
+	ip := net.ParseIP(s.conf.VPNConfig.IPNet)
+	if ip == nil {
+		return fmt.Errorf("invalid ip address %s", s.conf.VPNConfig.IPNet)
+	}
+	ipStr := ip.To4().String()
+
+	myPeerInfo := s.createPeerInfo(knownPeer, s.conf.P2pNode.Name, ipStr, isBlocked)
 	err = protocol.SendStatus(stream, myPeerInfo)
 	if err != nil {
 		return fmt.Errorf("sending status info: %v", err)
@@ -154,7 +168,7 @@ func (s *AuthStatus) BlockPeer(peerID peer.ID, name string) {
 	}()
 }
 
-func (s *AuthStatus) createPeerInfo(peer config.KnownPeer, myPeerName string, declined bool) protocol.PeerStatusInfo {
+func (s *AuthStatus) createPeerInfo(peer config.KnownPeer, myPeerName, ipAddr string, declined bool) protocol.PeerStatusInfo {
 	if declined {
 		return protocol.PeerStatusInfo{
 			Declined: true,
@@ -162,6 +176,7 @@ func (s *AuthStatus) createPeerInfo(peer config.KnownPeer, myPeerName string, de
 	}
 	myPeerInfo := protocol.PeerStatusInfo{
 		Name:                 myPeerName,
+		IPAddr:               ipAddr,
 		AllowUsingAsExitNode: peer.WeAllowUsingAsExitNode,
 	}
 
@@ -175,6 +190,7 @@ func (s *AuthStatus) processPeerStatusInfo(peer config.KnownPeer, peerInfo proto
 		return peer
 	}
 	peer.Name = peerInfo.Name
+	peer.IPAddr = peerInfo.IPAddr
 	peer.Confirmed = true
 	peer.Declined = false
 	if peer.DomainName == "" {
@@ -309,13 +325,13 @@ func (s *AuthStatus) SendAuthRequest(ctx context.Context, peerID peer.ID, req pr
 
 func (s *AuthStatus) AddPeer(ctx context.Context, peerID peer.ID, name, uniqAlias string, confirmed bool) {
 	s.conf.RLock()
-	ipAddr := s.conf.GenerateNextIpAddr()
+	//ipAddr := s.conf.GenerateNextIpAddr()
 	s.conf.RUnlock()
 	newPeerConfig := config.KnownPeer{
-		PeerID:    peerID.String(),
-		Name:      name,
-		Alias:     uniqAlias,
-		IPAddr:    ipAddr,
+		PeerID: peerID.String(),
+		Name:   name,
+		Alias:  uniqAlias,
+		//IPAddr:    ipAddr,
 		Confirmed: confirmed,
 		CreatedAt: time.Now(),
 	}
