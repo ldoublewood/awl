@@ -85,8 +85,8 @@ func (s *AuthStatus) StatusStreamHandler(stream network.Stream) {
 	delete(s.outgoingAuths, remotePeer)
 	s.authsLock.Unlock()
 
-	ip := net.ParseIP(s.conf.VPNConfig.IPNet)
-	if ip == nil {
+	ip, _, errParse := net.ParseCIDR(s.conf.VPNConfig.IPNet)
+	if errParse != nil {
 		s.logger.Errorf("invalid ip address %s", s.conf.VPNConfig.IPNet)
 		return
 	}
@@ -131,8 +131,8 @@ func (s *AuthStatus) ExchangeNewStatusInfo(ctx context.Context, remotePeerID pee
 	}()
 
 	_, isBlocked := s.conf.GetBlockedPeer(remotePeerID.String())
-	ip := net.ParseIP(s.conf.VPNConfig.IPNet)
-	if ip == nil {
+	ip, _, errParse := net.ParseCIDR(s.conf.VPNConfig.IPNet)
+	if errParse != nil {
 		return fmt.Errorf("invalid ip address %s", s.conf.VPNConfig.IPNet)
 	}
 	ipStr := ip.To4().String()
