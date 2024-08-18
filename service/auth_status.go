@@ -360,7 +360,7 @@ func (s *AuthStatus) AddPeer(ctx context.Context, peerID peer.ID, name, uniqAlia
 			}
 			errAuth := s.SendAuthRequest(ctx, peerID, authPeer)
 			if errAuth != nil {
-				s.logger.Errorf("send auth request %s: %v", peerID.String(), err)
+				s.logger.Errorf("send auth request %s: %v", peerID.String(), errAuth)
 				//stop more action
 				return
 			}
@@ -405,7 +405,10 @@ func (s *AuthStatus) BackgroundRetryAuthRequests(ctx context.Context) {
 		s.authsLock.RUnlock()
 
 		for peerID, auth := range outgoingAuthsCopy {
-			_ = s.SendAuthRequest(ctx, peerID, auth)
+			errAuth := s.SendAuthRequest(ctx, peerID, auth)
+			if errAuth != nil {
+				s.logger.Errorf("send auth request %s: %v", peerID.String(), errAuth)
+			}
 		}
 	}
 
