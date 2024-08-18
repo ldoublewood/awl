@@ -361,6 +361,8 @@ func (s *AuthStatus) AddPeer(ctx context.Context, peerID peer.ID, name, uniqAlia
 			errAuth := s.SendAuthRequest(ctx, peerID, authPeer)
 			if errAuth != nil {
 				s.logger.Errorf("send auth request %s: %v", peerID.String(), err)
+				//stop more action
+				return
 			}
 		}
 
