@@ -111,6 +111,10 @@ func (t *Tunnel) RefreshPeersList() {
 		if _, ok := t.peerIDToPeer[peerID]; ok {
 			continue
 		}
+		// not update status from remote yet
+		if knownPeer.IPAddr == "" {
+			continue
+		}
 		localIP := net.ParseIP(knownPeer.IPAddr).To4()
 		if localIP == nil {
 			t.logger.Errorf("Known peer %q has invalid IP %s in conf", knownPeer.DisplayName(), knownPeer.IPAddr)
