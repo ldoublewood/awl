@@ -128,7 +128,10 @@ func (h *Handler) UpdatePeerSettings(c echo.Context) (err error) {
 	h.conf.UpsertPeer(knownPeer)
 
 	go func() {
-		_ = h.authStatus.ExchangeNewStatusInfo(h.ctx, peerID, knownPeer)
+		errExchange := h.authStatus.ExchangeNewStatusInfo(h.ctx, peerID, knownPeer)
+		if errExchange != nil {
+			h.logger.Errorf("exchange new status info %s: %v", peerID.String(), errExchange)
+		}
 	}()
 
 	return c.NoContent(http.StatusOK)

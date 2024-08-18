@@ -164,7 +164,10 @@ func (s *AuthStatus) ExchangeNewStatusInfo(ctx context.Context, remotePeerID pee
 func (s *AuthStatus) BlockPeer(peerID peer.ID, name string) {
 	s.conf.UpsertBlockedPeer(peerID.String(), name)
 	go func() {
-		_ = s.ExchangeNewStatusInfo(context.Background(), peerID, config.KnownPeer{})
+		errExchange := s.ExchangeNewStatusInfo(context.Background(), peerID, config.KnownPeer{})
+		if errExchange != nil {
+			s.logger.Errorf("exchange new status info %s: %v", peerID.String(), errExchange)
+		}
 	}()
 }
 
@@ -355,11 +358,18 @@ func (s *AuthStatus) AddPeer(ctx context.Context, peerID peer.ID, name, uniqAlia
 				AuthInfo: authInfo,
 				Name:     s.conf.P2pNode.Name,
 			}
-			_ = s.SendAuthRequest(ctx, peerID, authPeer)
+			errAuth := s.SendAuthRequest(ctx, peerID, authPeer)
+			if errAuth != nil {
+				s.logger.Errorf("send auth request %s: %v", peerID.String(), err)
+			}
 		}
 
 		knownPeer, _ := s.conf.GetPeer(peerID.String())
-		_ = s.ExchangeNewStatusInfo(ctx, peerID, knownPeer)
+		errExchange := s.ExchangeNewStatusInfo(ctx, peerID, knownPeer)
+		if errExchange != nil {
+			s.logger.Errorf("exchange new status info %s: %v", peerID.String(), errExchange)
+		}
+
 	}()
 }
 
@@ -376,7 +386,10 @@ func (s *AuthStatus) ExchangeStatusInfoWithAllKnownPeers(ctx context.Context) {
 		if !exists {
 			continue
 		}
-		_ = s.ExchangeNewStatusInfo(ctx, knownPeer.PeerId(), knownPeer)
+		errExchange := s.ExchangeNewStatusInfo(ctx, knownPeer.PeerId(), knownPeer)
+		if errExchange != nil {
+			s.logger.Errorf("exchange new status info %s: %v", peerID.String(), errExchange)
+		}
 	}
 }
 
