@@ -20,8 +20,9 @@ import (
 )
 
 const (
-	filesPerm = 0600
-	dirsPerm  = 0700
+	filesPerm      = 0600
+	dirsPerm       = 0700
+	DefaultP2pPort = 4363
 )
 
 // TODO: move to Config struct?
@@ -174,6 +175,20 @@ func setByEnv(conf *Config) {
 		conf.Rendezvous = rendezvous
 	}
 
+	noBoostrap := os.Getenv(NoBootstrapKey)
+	if len(noBoostrap) == 0 || noBoostrap == "yes" {
+		conf.NoBootstrap = true
+	}
+	port := os.Getenv(PortKey)
+	if len(port) == 0 {
+		conf.P2pNode.ListenPort = DefaultP2pPort
+	} else {
+		iPort, err := strconv.Atoi(port)
+		if err != nil {
+			panic("invalid port format:" + port)
+		}
+		conf.P2pNode.ListenPort = iPort
+	}
 }
 func setDefaultsAndEnv(conf *Config, bus awlevent.Bus) {
 	setDefaults(conf, bus)

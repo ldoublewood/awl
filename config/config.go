@@ -24,6 +24,8 @@ const (
 	DhtPeerstoreDataDirectory = "peerstore"
 	AppDataDirEnvKey          = "AWL_DATA_DIR"
 	RendezvousKey             = "RENDEZVOUS"
+	NoBootstrapKey            = "NO_BOOTSTRAP"
+	PortKey                   = "PORT"
 	IPAddrKey                 = "IPADDR"
 	AliasKey                  = "ALIAS"
 	// TODO 8989 maybe?
@@ -55,7 +57,10 @@ type (
 		BlockedPeers          map[string]BlockedPeer `json:"blockedPeers"`
 		Update                UpdateConfig           `json:"update"`
 
-		Rendezvous string `json:"rendezvous"`
+		Rendezvous     string            `json:"rendezvous"`
+		BootstrapPeers map[string]string `json:"bootstrapPeers"`
+		NoBootstrap    bool              `json:"noBootstrap"`
+		Port           int               `json:"port"`
 	}
 	P2pNodeConfig struct {
 		// Hex-encoded multihash representing a peer ID, calculated from Identity
@@ -69,6 +74,7 @@ type (
 
 		UseDedicatedConnForEachStream bool `json:"useDedicatedConnForEachStream"`
 		ParallelSendingStreamsCount   int  `json:"parallelSendingStreamsCount"`
+		ListenPort                    int  `json:"listenPort"`
 	}
 	VPNConfig struct {
 		InterfaceName string `json:"interfaceName"`
@@ -259,10 +265,15 @@ func (c *Config) GetBootstrapPeers() []peer.AddrInfo {
 	}
 	c.RUnlock()
 
-	allMultiaddrs = append(allMultiaddrs, DefaultBootstrapPeers...)
+	if !c.NoBootstrap {
+		allMultiaddrs = append(allMultiaddrs, DefaultBootstrapPeers...)
+	}
 	addrInfos, err := peer.AddrInfosFromP2pAddrs(allMultiaddrs...)
 	if err != nil {
 		logger.Warnf("invalid one or more bootstrap addr info from config: %v", err)
+		if c.NoBootstrap {
+			return []peer.AddrInfo{}
+		}
 		addrInfos, err = peer.AddrInfosFromP2pAddrs(DefaultBootstrapPeers...)
 		if err != nil {
 			panic(err)

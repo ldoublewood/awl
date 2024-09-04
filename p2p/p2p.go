@@ -48,12 +48,13 @@ const (
 
 	// Port is unassigned by IANA and seems quite unused.
 	// https://www.iana.org/assignments/service-names-port-numbers/service-names-port-numbers.txt
-	defaultP2pPort = 4363
+	//	DefaultP2pPort = 4363
 )
 
 type HostConfig struct {
 	PrivKeyBytes   []byte
 	ListenAddrs    []multiaddr.Multiaddr
+	ListenPort     int
 	UserAgent      string
 	BootstrapPeers []peer.AddrInfo
 
@@ -129,7 +130,7 @@ func (p *P2p) InitHost(hostConfig HostConfig) (host.Host, error) {
 
 	listenAddrs := hostConfig.ListenAddrs
 	if len(listenAddrs) == 0 {
-		listenAddrs = findListenAddrs()
+		listenAddrs = findListenAddrs(hostConfig.ListenPort)
 	}
 
 	p2pHost, err := libp2p.New(
@@ -420,7 +421,7 @@ func (p *P2p) peerAddressesString(peerID peer.ID) []string {
 	return addrs
 }
 
-func findListenAddrs() []multiaddr.Multiaddr {
+func findListenAddrs(defaultP2pPort int) []multiaddr.Multiaddr {
 	// check if default port is open on tcp and udp
 	tcpListener, err := net.ListenTCP("tcp", &net.TCPAddr{Port: defaultP2pPort})
 	if err != nil {
@@ -434,7 +435,7 @@ func findListenAddrs() []multiaddr.Multiaddr {
 	}
 	_ = udpConn.Close()
 
-	return DefaultListenAddrs()
+	return DefaultListenAddrs(defaultP2pPort)
 }
 
 func UnicastListenAddrs() []multiaddr.Multiaddr {
@@ -446,7 +447,7 @@ func UnicastListenAddrs() []multiaddr.Multiaddr {
 	}
 }
 
-func DefaultListenAddrs() []multiaddr.Multiaddr {
+func DefaultListenAddrs(defaultP2pPort int) []multiaddr.Multiaddr {
 	return []multiaddr.Multiaddr{
 		multiaddr.StringCast(fmt.Sprintf("/ip4/0.0.0.0/tcp/%d", defaultP2pPort)),
 		multiaddr.StringCast(fmt.Sprintf("/ip6/::/tcp/%d", defaultP2pPort)),

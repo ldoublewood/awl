@@ -264,6 +264,7 @@ func (a *Application) makeP2pHostConfig() p2p.HostConfig {
 	return p2p.HostConfig{
 		PrivKeyBytes:   a.Conf.PrivKey(),
 		ListenAddrs:    a.Conf.GetListenAddresses(),
+		ListenPort:     a.Conf.P2pNode.ListenPort,
 		UserAgent:      config.UserAgent,
 		BootstrapPeers: a.Conf.GetBootstrapPeers(),
 		Libp2pOpts: []libp2p.Option{
