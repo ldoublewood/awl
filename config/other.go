@@ -176,7 +176,7 @@ func setByEnv(conf *Config) {
 	}
 
 	noBoostrap := os.Getenv(NoBootstrapKey)
-	if len(noBoostrap) != 0 || noBoostrap == "yes" {
+	if len(noBoostrap) != 0 && noBoostrap == "yes" {
 		conf.NoBootstrap = true
 	}
 	port := os.Getenv(PortKey)
